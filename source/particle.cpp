@@ -265,33 +265,70 @@ void Particle::advance(const array<double, 3>& E_field,
 		throw invalid_argument("total number of steps exceeded");
 
 	array<double, 3> vel_curr = getVel_step(current_steps-1);
+  double gamma_curr = 1. / sqrt(1 - pow(INV_C_LIGHT, 2) * array_norm_sq(vel_curr));
+  array<double, 3> mom_curr_non_norm = array_mult_scalar(vel_curr, gamma_curr*m);
 
 	// relativistic Boris particle pusher
-	double gamma = 1./ sqrt(1. - array_norm_sq(vel_curr) * pow(INV_C_LIGHT, 2) );
 
-	array<double, 3> p_min = array_add( array_mult_scalar(vel_curr, gamma * m),
-				array_mult_scalar(E_field, q * dt / 2.) );
+  array<double, 3> delta_mom_half_step_non_norm = array_mult_scalar(E_field, dt * q / 2.);
 
-	array<double, 3> t_vec = array_mult_scalar(B_field, q * dt / (2. * gamma * m));
+  array<double, 3> mom_half_step = array_mult_scalar( array_add(mom_curr_non_norm, delta_mom_half_step_non_norm),
+       1./(m * C_LIGHT));
 
-	array<double, 3> s_vec = array_mult_scalar(t_vec, 2. / (1 + array_norm_sq(t_vec)) );
+  double root = q*dt / (2. * m * sqrt(1. + array_norm_sq(mom_half_step)) );
 
-	array<double, 3> p_bar = array_add(p_min, array_cross_product(p_min, t_vec));
+  array<double, 3> tau = array_mult_scalar(B_field, root);
 
-	array<double, 3> p_plus = array_add(p_min, array_cross_product(p_bar, s_vec));
+  double tau_scalar = 1. / (1 + array_norm_sq(tau));
 
-	array<double, 3> p_new = array_add(p_plus, array_mult_scalar(E_field, q * dt / 2.));
+  array<double, 3> mom_prime_1 = array_mult_scalar(mom_half_step, 1. - array_norm_sq(tau));
+  array<double, 3> mom_prime_2 = array_mult_scalar(tau, array_dot_product(tau, mom_half_step) * 2);
+  array<double, 3> mom_prime_3 = array_mult_scalar(array_cross_product(tau, mom_half_step), -2.);
+  array<double, 3> mom_prime = array_mult_scalar(
+    array_add(mom_prime_1, array_add(mom_prime_2, mom_prime_3)), tau_scalar);
+
+  array<double, 3> new_mom = array_add(mom_prime, 
+    array_mult_scalar(delta_mom_half_step_non_norm, 1./ (m*C_LIGHT)));
+
+  double inv_gamma = 1. / sqrt(1. + array_norm_sq(new_mom));
+
+  array<double, 3> new_vel = array_mult_scalar(new_mom, C_LIGHT * inv_gamma);
+
+  vel[0][current_steps] = new_vel[0];
+  vel[1][current_steps] = new_vel[1];
+  vel[2][current_steps] = new_vel[2];
+
+  pos[0][current_steps] = pos[0][current_steps-1] + new_vel[0] * dt;
+  pos[1][current_steps] = pos[1][current_steps-1] + new_vel[1] * dt;
+  pos[2][current_steps] = pos[2][current_steps-1] + new_vel[2] * dt;
 
 
-	double inv_gamma_m = 1. / ( m * sqrt(1 + array_norm_sq(p_new) / pow(m * C_LIGHT, 2)) );
 
-	vel[0][current_steps] = p_new[0] * inv_gamma_m;
-	vel[1][current_steps] = p_new[1] * inv_gamma_m;
-	vel[2][current_steps] = p_new[2] * inv_gamma_m;
+	// double gamma = 1./ sqrt(1. - array_norm_sq(vel_curr) * pow(INV_C_LIGHT, 2) );
 
-	pos[0][current_steps] = pos[0][current_steps-1] + vel[0][current_steps] * dt;
-	pos[1][current_steps] = pos[1][current_steps-1] + vel[1][current_steps] * dt;
-	pos[2][current_steps] = pos[2][current_steps-1] + vel[2][current_steps] * dt;
+	// array<double, 3> p_min = array_add( array_mult_scalar(vel_curr, gamma * m),
+	// 			array_mult_scalar(E_field, q * dt / 2.) );
+
+	// array<double, 3> t_vec = array_mult_scalar(B_field, q * dt / (2. * gamma * m));
+
+	// array<double, 3> s_vec = array_mult_scalar(t_vec, 2. / (1 + array_norm_sq(t_vec)) );
+
+	// array<double, 3> p_bar = array_add(p_min, array_cross_product(p_min, t_vec));
+
+	// array<double, 3> p_plus = array_add(p_min, array_cross_product(p_bar, s_vec));
+
+	// array<double, 3> p_new = array_add(p_plus, array_mult_scalar(E_field, q * dt / 2.));
+
+
+	// double inv_gamma_m = 1. / ( m * sqrt(1 + array_norm_sq(p_new) / pow(m * C_LIGHT, 2)) );
+
+	// vel[0][current_steps] = p_new[0] * inv_gamma_m;
+	// vel[1][current_steps] = p_new[1] * inv_gamma_m;
+	// vel[2][current_steps] = p_new[2] * inv_gamma_m;
+
+	// pos[0][current_steps] = pos[0][current_steps-1] + vel[0][current_steps] * dt;
+	// pos[1][current_steps] = pos[1][current_steps-1] + vel[1][current_steps] * dt;
+	// pos[2][current_steps] = pos[2][current_steps-1] + vel[2][current_steps] * dt;
 
 
 	current_steps++;

@@ -46,6 +46,8 @@ Simulation::~Simulation()
 
 void Simulation::run()
 {
+  int percentage_completed = 0;
+
 	for (int step_nr = 0; step_nr < total_steps_sim; step_nr++)
 	{
 		for (int part_nr = 0; part_nr < (int)particles.size(); ++part_nr)
@@ -71,7 +73,15 @@ void Simulation::run()
 			particles[part_nr]->advance(E_field, B_field);
 		}
 
-		cout << "Finished step " << step_nr+1 << " of " << total_steps_sim << endl;
+    if( 100 * (step_nr+1) / total_steps_sim > percentage_completed)
+    {
+      percentage_completed = 100 * (step_nr+1) / total_steps_sim;
+
+		  cout << "Finished step " << step_nr+1 << " of " << total_steps_sim 
+        << "\t[" << percentage_completed << "%]" << endl;
+      
+    }
+
 	}
 }
 
