@@ -14,7 +14,7 @@ public:
 
 	void run();
 
-	std::ostream& print_pos(std::ostream& os);
+	std::ostream& print_pos(std::ostream& os, int step_size_output = 1);
 	
 private:
 	std::vector<Particle*> particles;

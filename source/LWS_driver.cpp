@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 		{
 			ofstream outFile;
 			outFile.open(outputFilename);
-			simul.print_pos(outFile);
+			simul.print_pos(outFile, 100);
 			outFile.close();
 
 		} else {

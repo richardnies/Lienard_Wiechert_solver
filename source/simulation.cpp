@@ -48,13 +48,27 @@ void Simulation::run()
 {
   int percentage_completed = 0;
 
+	// Is it really needed to first compute all E,B and then only advance particles?
+	// It should be taken into account by algorithm.
+	array<double, 3>* E_field;
+	array<double, 3>* B_field;
+
+	E_field = new array<double, 3>[(int)particles.size()];
+	B_field = new array<double, 3>[(int)particles.size()];
+
 	for (int step_nr = 0; step_nr < total_steps_sim; step_nr++)
 	{
+
+		// find E and B fields acting on each particles 
 		for (int part_nr = 0; part_nr < (int)particles.size(); ++part_nr)
 		{
-			// find E and B fields from every other particle
-			array<double, 3> E_field = {0, 0, 0};
-			array<double, 3> B_field = {0, 0, 0};
+			E_field[part_nr][0] = 0;
+			E_field[part_nr][1] = 0;
+			E_field[part_nr][2] = 0;
+			B_field[part_nr][0] = 0;
+			B_field[part_nr][1] = 0;
+			B_field[part_nr][2] = 0;
+
 			double t_0;
 
 			for (int part_nr_inter = 0; part_nr_inter < (int)particles.size();
@@ -67,12 +81,19 @@ void Simulation::run()
 				t_0 = particles[part_nr]->find_retarded_time(*particles[part_nr_inter]);
 
 				particles[part_nr]->compute_E_B(*particles[part_nr_inter], t_0, 
-							E_field, B_field);
+							E_field[part_nr], B_field[part_nr]);
 			}
 
-			particles[part_nr]->advance(E_field, B_field);
 		}
 
+		// update positions
+		for (int part_nr = 0; part_nr < (int)particles.size(); ++part_nr)
+		{
+			particles[part_nr]->advance(E_field[part_nr], B_field[part_nr]);
+		}
+
+
+		// terminal output: simulation progress
     if( 100 * (step_nr+1) / total_steps_sim > percentage_completed)
     {
       percentage_completed = 100 * (step_nr+1) / total_steps_sim;
@@ -83,11 +104,14 @@ void Simulation::run()
     }
 
 	}
+
+	delete[] E_field;
+	delete[] B_field;
 }
 
 
 
-std::ostream& Simulation::print_pos(std::ostream& os)
+std::ostream& Simulation::print_pos(std::ostream& os, int step_size_output)
 {
 	os << setw(OUTPUT_WIDTH) << "TIME";
 	for (int part_nr = 0; part_nr < (int)particles.size(); ++part_nr)

@@ -1,3 +1,6 @@
 *.o
 *.eps
 output*.txt
+*.dat
+*.jpg
+*.png

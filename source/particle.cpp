@@ -264,6 +264,7 @@ void Particle::advance(const array<double, 3>& E_field,
 	if (current_steps-1 == total_steps)
 		throw invalid_argument("total number of steps exceeded");
 
+
 	array<double, 3> vel_curr = getVel_step(current_steps-1);
   double gamma_curr = 1. / sqrt(1 - pow(INV_C_LIGHT, 2) * array_norm_sq(vel_curr));
   array<double, 3> mom_curr_non_norm = array_mult_scalar(vel_curr, gamma_curr*m);
@@ -298,9 +299,12 @@ void Particle::advance(const array<double, 3>& E_field,
   vel[1][current_steps] = new_vel[1];
   vel[2][current_steps] = new_vel[2];
 
-  pos[0][current_steps] = pos[0][current_steps-1] + new_vel[0] * dt;
-  pos[1][current_steps] = pos[1][current_steps-1] + new_vel[1] * dt;
-  pos[2][current_steps] = pos[2][current_steps-1] + new_vel[2] * dt;
+  pos[0][current_steps] = pos[0][current_steps-1] + 
+  	(vel_curr[0] + new_vel[0]) * dt/2.0;
+  pos[1][current_steps] = pos[1][current_steps-1] + 
+  	(vel_curr[1] + new_vel[1]) * dt/2.0;
+  pos[2][current_steps] = pos[2][current_steps-1] + 
+  	(vel_curr[2] + new_vel[2]) * dt/2.0;
 
 
 
